@@ -18,7 +18,7 @@ FULL_LOG = data["FULL_LOG"]  # List anylysis result to console
 
 FIRST_INTERVAL = Interval.INTERVAL_1_MINUTE
 SECOND_INTERVAL = Interval.INTERVAL_5_MINUTES
-TA_BUY_THRESHOLD = 18  # How many of the 26 indicators to indicate a buy
+TA_BUY_THRESHOLD = 19  # How many of the 26 indicators to indicate a buy
 
 
 def analyze(pairs):

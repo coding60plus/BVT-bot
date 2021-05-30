@@ -21,10 +21,10 @@ TICKERS = data["TICKERS_LIST"]
 TIME_TO_WAIT = data["TIME_TO_WAIT"]  # Minutes to wait between analysis
 FULL_LOG = data["FULL_LOG"]  # List anylysis result to console
 
-OSC_INDICATORS = ["MACD", "Stoch.RSI", "Mom"]  # Indicators to use in Oscillator analysis
-OSC_THRESHOLD = 2  # Must be less or equal to number of items in OSC_INDICATORS
-MA_INDICATORS = ["EMA10", "EMA20"]  # Indicators to use in Moving averages analysis
-MA_THRESHOLD = 2  # Must be less or equal to number of items in MA_INDICATORS
+OSC_INDICATORS = ["MACD", "RSI", "Mom"]  # Indicators to use in Oscillator analysis
+OSC_THRESHOLD = 3  # Must be less or equal to number of items in OSC_INDICATORS
+MA_INDICATORS = ["SMA50", "EMA20", "VWMA"]  # Indicators to use in Moving averages analysis
+MA_THRESHOLD = 3  # Must be less or equal to number of items in MA_INDICATORS
 INTERVAL = Interval.INTERVAL_5_MINUTES  # Timeframe for analysis
 
 

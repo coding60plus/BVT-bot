@@ -123,9 +123,9 @@ def wait_for_price():
         # sleep for exactly the amount of time required
         time.sleep((timedelta(minutes=float(TIME_DIFFERENCE / RECHECK_INTERVAL)) - (datetime.now() - historical_prices[hsp_head]["BNB" + PAIR_WITH]["time"])).total_seconds())
 
-    print(
-        f"Using {len(coins_bought)}/{TRADE_SLOTS} trade slots. Session profit: {session_profit:.2f}% - Est: {(QUANTITY * session_profit)/100:.{decimals(PAIR_WITH)}f} {PAIR_WITH}"
-    )  # retrieve latest prices
+    # print(
+    #     f"Using {len(coins_bought)}/{TRADE_SLOTS} trade slots. Session profit: {session_profit:.2f}% - Est: {(QUANTITY * session_profit)/100:.{decimals(PAIR_WITH)}f} {PAIR_WITH}"
+    # )  # retrieve latest prices
 
     get_price()
 
@@ -212,9 +212,11 @@ def balance_report():
     INVESTMENT_GAIN = (TOTAL_GAINS / INVESTMENT_TOTAL) * 100
 
     print(f" ")
-    print(f"Using {len(coins_bought)}/{TRADE_SLOTS} trade slots. Session profit: {session_profit:.2f}% - Est: {TOTAL_GAINS:.{decimals(PAIR_WITH)}f} {PAIR_WITH}")
     print(
-        f"Investment: {INVESTMENT_TOTAL:.{decimals(PAIR_WITH)}f} {PAIR_WITH}, Exposure: {CURRENT_EXPOSURE:.{decimals(PAIR_WITH)}f} {PAIR_WITH}, New balance: {NEW_BALANCE:.{decimals(PAIR_WITH)}f} {PAIR_WITH}, Gains: {(txcolors.SELL_LOSS if INVESTMENT_GAIN < 0. else txcolors.SELL_PROFIT)}{INVESTMENT_GAIN:.2f}%"
+        f"Using {len(coins_bought)}/{TRADE_SLOTS} trade slots. Session profit: {(txcolors.SELL_LOSS if session_profit < 0. else txcolors.SELL_PROFIT)}{session_profit:.2f} %{txcolors.DEFAULT} - Est: {(txcolors.SELL_LOSS if TOTAL_GAINS < 0. else txcolors.SELL_PROFIT)}{TOTAL_GAINS:.{decimals(PAIR_WITH)}f} {PAIR_WITH}{txcolors.DEFAULT}"
+    )
+    print(
+        f"Investment: {INVESTMENT_TOTAL:.{decimals(PAIR_WITH)}f} {PAIR_WITH}, Exposure: {CURRENT_EXPOSURE:.{decimals(PAIR_WITH)}f} {PAIR_WITH}, New balance: {(txcolors.SELL_LOSS if NEW_BALANCE < INVESTMENT_TOTAL else txcolors.SELL_PROFIT)}{NEW_BALANCE:.{decimals(PAIR_WITH)}f} {PAIR_WITH}{txcolors.DEFAULT}, Gains: {(txcolors.SELL_LOSS if INVESTMENT_GAIN < 0. else txcolors.SELL_PROFIT)}{INVESTMENT_GAIN:.2f}%{txcolors.DEFAULT}"
     )
     print(f"---------------------------------------------------------------------------------------------")
     print(f" ")
@@ -242,7 +244,9 @@ def pause_bot():
 
         # pausing here
         if hsp_head == 1:
-            print(f"Paused...Session profit:{session_profit:.2f}% Est: {(QUANTITY * session_profit)/100:.{decimals(PAIR_WITH)}f} {PAIR_WITH}")
+            print(
+                f"Paused...Session profit:{(txcolors.SELL_LOSS if session_profit < 0. else txcolors.SELL_PROFIT)}{session_profit:.2f} %{txcolors.DEFAULT} - Est: {(txcolors.SELL_LOSS if ((QUANTITY * session_profit)/100) < 0. else txcolors.SELL_PROFIT)}{(QUANTITY * session_profit)/100:.{decimals(PAIR_WITH)}f} {PAIR_WITH}{txcolors.DEFAULT}"
+            )
         time.sleep((TIME_DIFFERENCE * 60) / RECHECK_INTERVAL)
 
     else:

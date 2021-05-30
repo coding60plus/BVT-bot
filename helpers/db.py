@@ -15,9 +15,9 @@ def initialize_database(database, tables=["portfolio", "trades"]):
     client = my_client()
     db = client[database]
     ids = []
-    print("MONGO: DBs and Collections are not created until data is stored in them...")
+    # print("MONGO: DBs and Collections are not created until data is stored in them...")
     for table in tables:
-        print(f"MONGO: the {table} table does exist in {database} database, creating now...")
+        # print(f"MONGO: the {table} table does exist in {database} database, creating now...")
         x = db[table]
 
 
@@ -27,7 +27,7 @@ def see_if_db_exists(default_dbs=["bvt", "bvt-test"]):
 
     for db in default_dbs:
         if db not in dbnames:
-            print(f"MONGO: the {db} does not exist, creating now...")
+            # print(f"MONGO: the {db} does not exist, creating now...")
             initialize_database(db)
 
 
