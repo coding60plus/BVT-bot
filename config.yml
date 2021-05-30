@@ -7,8 +7,8 @@ script_options:
   LOG_FILE: 'trades.txt'
 
   # Used to print debugging statements in the script
-  # DEBUG: False
-  DEBUG: True
+  DEBUG: False
+  # DEBUG: True
 
   # Set this to true if you are accessing binance from within the United States of America
   # Need to change TLD
@@ -16,6 +16,9 @@ script_options:
 
   # Modified to use testnet
   TESTNET: False
+
+  # Modified to use mongo db
+  MONGO: True
 
 # These options apply to the trading methods the script executes
 trading_options:
@@ -28,6 +31,12 @@ trading_options:
   # Recommended: no less than 12 USDT. Suggested: 15 or more.
   QUANTITY: 15
 
+  # Maximum number of trade 'slots' at any time (your USDT balance must be at least TRADE_SLOTS * QUANTITY)
+  TRADE_SLOTS: 10
+
+  # Maximum number of orders that can be placed
+  MAX_ORDERS: 99
+
   # List of trading pairs to exclude
   # by default we're excluding the most popular fiat pairs
   FIATS:
@@ -38,12 +47,6 @@ trading_options:
     - DOWN
     - UP
 
-  # Maximum number of orders that can be placed
-  MAX_ORDERS: 10
-
-  # Maximum number of trade 'slots' at any time (your USDT balance must be at least TRADE_SLOTS * QUANTITY)
-  TRADE_SLOTS: 20
-
   # the amount of time in MINUTES to calculate the difference from the current price (minimum: 1).
   TIME_DIFFERENCE: 2
 
@@ -52,17 +55,17 @@ trading_options:
   RECHECK_INTERVAL: 10
 
   # the difference in % between the first and second checks for the price.
-  CHANGE_IN_PRICE: 1.8
+  CHANGE_IN_PRICE: 3
 
   # define in % when to sell a coin that's not making a profit.
-  STOP_LOSS: .6
+  STOP_LOSS: .3
 
   # define in % when to take profit on a profitable coin.
   TAKE_PROFIT: .6
 
   # Use custom tickers.txt list for filtering pairs.
-  # CUSTOM_LIST: False
-  CUSTOM_LIST: True
+  CUSTOM_LIST: False
+  # CUSTOM_LIST: True
    
   # Name of custom tickers list
   TICKERS_LIST: 'tickers.txt'
@@ -82,8 +85,10 @@ trading_options:
   
   SIGNALLING_MODULES:
     - pausebotmod
-    - custsignalmod
-    - signalsamplemod
+    - newcustsignalmod
+    # - newsignalsamplemod
+    # - custsignalmod
+    # - signalsamplemod
     
 # These options apply to the signalling methods the script executes
 signalling_options:
@@ -98,4 +103,5 @@ signalling_options:
   TIME_TO_WAIT: 1 
 
   # List analysis result to console
-  FULL_LOG: True 
+  FULL_LOG: False
+  # FULL_LOG: True 

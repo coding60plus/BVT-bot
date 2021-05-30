@@ -15,6 +15,7 @@ or others connected with the program.
 
 # use for environment variables
 import os
+from re import X
 
 # use if needed to pass args to external modules
 import sys
@@ -47,8 +48,11 @@ from helpers.get_tickers import get_new_tickers
 # load get config module
 from helpers.get_config import config
 
-# Load colors
+# Load colors module
 from helpers.colors import txcolors
+
+# Load db module
+from helpers.db import *
 
 # tracks profit/loss each session
 global session_profit
@@ -153,7 +157,7 @@ def wait_for_price():
         time.sleep((timedelta(minutes=float(TIME_DIFFERENCE / RECHECK_INTERVAL)) - (datetime.now() - historical_prices[hsp_head]["BNB" + PAIR_WITH]["time"])).total_seconds())
 
     print(
-        f"Using {len(coins_bought)}/{TRADE_SLOTS} trade slots. Session profit: {session_profit:.2f}% - Est: {(QUANTITY * session_profit)/100:.{decimals()}f} {PAIR_WITH}"
+        f"Using {len(coins_bought)}/{TRADE_SLOTS} trade slots. Session profit: {session_profit:.2f}% - Est: {(QUANTITY * session_profit)/100:.{decimals(PAIR_WITH)}f} {PAIR_WITH}"
     )  # retrieve latest prices
 
     get_price()
@@ -241,9 +245,9 @@ def balance_report():
     INVESTMENT_GAIN = (TOTAL_GAINS / INVESTMENT_TOTAL) * 100
 
     print(f" ")
-    print(f"Using {len(coins_bought)}/{TRADE_SLOTS} trade slots. Session profit: {session_profit:.2f}% - Est: {TOTAL_GAINS:.{decimals()}f} {PAIR_WITH}")
+    print(f"Using {len(coins_bought)}/{TRADE_SLOTS} trade slots. Session profit: {session_profit:.2f}% - Est: {TOTAL_GAINS:.{decimals(PAIR_WITH)}f} {PAIR_WITH}")
     print(
-        f"Investment: {INVESTMENT_TOTAL:.{decimals()}f} {PAIR_WITH}, Exposure: {CURRENT_EXPOSURE:.{decimals()}f} {PAIR_WITH}, New balance: {NEW_BALANCE:.{decimals()}f} {PAIR_WITH}, Gains: {INVESTMENT_GAIN:.2f}%"
+        f"Investment: {INVESTMENT_TOTAL:.{decimals(PAIR_WITH)}f} {PAIR_WITH}, Exposure: {CURRENT_EXPOSURE:.{decimals(PAIR_WITH)}f} {PAIR_WITH}, New balance: {NEW_BALANCE:.{decimals(PAIR_WITH)}f} {PAIR_WITH}, Gains: {(txcolors.SELL_LOSS if INVESTMENT_GAIN < 0. else txcolors.SELL_PROFIT)}{INVESTMENT_GAIN:.2f}%"
     )
     print(f"---------------------------------------------------------------------------------------------")
     print(f" ")
@@ -346,7 +350,10 @@ def buy_coins():
             print("max orders =", max_orders)
 
             if TEST_MODE:
-                orders[coin] = [{"symbol": coin, "orderId": 0, "time": datetime.now().timestamp()}]
+                orders[coin] = [{"symbol": coin, "orderId": fake_orderid(), "time": datetime.now().timestamp()}]
+                value = {"volume": volume[coin], "timestamp": time.time(), "action": "buy", "coin": str(coin), "buyPrice": float(last_price[coin]["price"])}
+                if MONGO:
+                    insert_trades(value, DATABASE_NAME)
 
                 # Log trade
                 if LOG_TRADES:
@@ -375,6 +382,9 @@ def buy_coins():
 
                 else:
                     print("Order returned, saving order to file")
+                    value = {"volume": volume[coin], "timestamp": time.time(), "action": "buy", "coin": str(coin), "buyPrice": float(last_price[coin]["price"])}
+                    if MONGO:
+                        insert_trades(value, DATABASE_NAME)
 
                     # Log trade
                     if LOG_TRADES:
@@ -424,7 +434,7 @@ def sell_coins():
         # check that the price is below the stop loss or above take profit (if trailing stop loss not used) and sell if this is the case
         if LastPrice < SL or LastPrice > TP and not USE_TRAILING_STOP_LOSS:
             print(
-                f"{txcolors.SELL_PROFIT if PriceChange >= 0. else txcolors.SELL_LOSS}TP or SL reached, selling {coins_bought[coin]['volume']} {coin} - {BuyPrice} - {LastPrice} : {PriceChange-(BuyFee+SellFee):.2f}% Est: {(QUANTITY*(PriceChange-(BuyFee+SellFee)))/100:.{decimals()}f} {PAIR_WITH}{txcolors.DEFAULT}"
+                f"{txcolors.SELL_PROFIT if PriceChange >= 0. else txcolors.SELL_LOSS}TP or SL reached, selling {coins_bought[coin]['volume']} {coin} - {BuyPrice} - {LastPrice} : {PriceChange-(BuyFee+SellFee):.2f}% Est: {(QUANTITY*(PriceChange-(BuyFee+SellFee)))/100:.{decimals(PAIR_WITH)}f} {PAIR_WITH}{txcolors.DEFAULT}"
             )
             # try to create a real order
             try:
@@ -443,6 +453,8 @@ def sell_coins():
                 # prevent system from buying this coin for the next TIME_DIFFERENCE minutes
                 volatility_cooloff[coin] = datetime.now()
 
+                profit = ((LastPrice - BuyPrice) * coins_sold[coin]["volume"]) * (1 - (BuyFee + SellFee))
+
                 # Log trade
                 if LOG_TRADES:
                     # Original
@@ -456,25 +468,43 @@ def sell_coins():
                     # if buy is 5, fee is 0.00375
                     # if sell is 10, fee is 0.0075
                     # for the above, BuyFee + SellFee = 0.07875
-                    profit = ((LastPrice - BuyPrice) * coins_sold[coin]["volume"]) * (1 - (BuyFee + SellFee))
+                    # profit = ((LastPrice - BuyPrice) * coins_sold[coin]["volume"]) * (1 - (BuyFee + SellFee))
                     # LastPrice (10) - BuyPrice (5) = 5
                     # 5 * coins_sold (1) = 5
                     # 5 * (1-(0.07875)) = 4.60625
                     # profit = 4.60625, it seems ok!
                     write_log(
-                        f"Sell: {coins_sold[coin]['volume']} {coin} - {BuyPrice} - {LastPrice} Profit: {profit:.{decimals()}f} {PAIR_WITH} ({PriceChange-(BuyFee+SellFee):.2f}%)"
+                        f"Sell: {coins_sold[coin]['volume']} {coin} - {BuyPrice} - {LastPrice} Profit: {profit:.{decimals(PAIR_WITH)}f} {PAIR_WITH} ({PriceChange-(BuyFee+SellFee):.2f}%)"
                     )
                     session_profit = session_profit + (PriceChange - (BuyFee + SellFee))
 
                     # print balance report
                     balance_report()
+
+                # Send event to database
+                if "-" in str(profit):
+                    made_profit = False
+                else:
+                    made_profit = True
+                value = {
+                    "volume": coins_sold[coin]["volume"],
+                    "timestamp": time.time(),
+                    "action": "sell",
+                    "madeProfit": made_profit,
+                    "coin": coin,
+                    "profit": profit,
+                    "buyPrice": BuyPrice,
+                    "sellPrice": LastPrice,
+                }
+                if MONGO:
+                    insert_trades(value, DATABASE_NAME)
             continue
 
         # no action; print once every TIME_DIFFERENCE
         if hsp_head == 1:
             if len(coins_bought) > 0:
                 print(
-                    f"TP or SL not yet reached, not selling {coin} for now {BuyPrice} - {LastPrice} : {txcolors.SELL_PROFIT if PriceChange >= 0. else txcolors.SELL_LOSS}{PriceChange-(BuyFee+SellFee):.2f}% Est: {(QUANTITY*(PriceChange-(BuyFee+SellFee)))/100:.{decimals()}f} {PAIR_WITH}{txcolors.DEFAULT}"
+                    f"TP or SL not yet reached, not selling {coin} for now {BuyPrice} - {LastPrice} : {txcolors.SELL_PROFIT if PriceChange >= 0. else txcolors.SELL_LOSS}{PriceChange-(BuyFee+SellFee):.2f}% Est: {(QUANTITY*(PriceChange-(BuyFee+SellFee)))/100:.{decimals(PAIR_WITH)}f} {PAIR_WITH}{txcolors.DEFAULT}"
                 )
 
     if hsp_head == 1 and len(coins_bought) == 0:
@@ -485,25 +515,56 @@ def sell_coins():
 
 def update_portfolio(orders, last_price, volume):
     """add every coin bought to our portfolio for tracking/selling later"""
-    if DEBUG:
+    if DEBUG and len(orders) > 0:
         print(orders)
-    for coin in orders:
 
-        coins_bought[coin] = {
+    for coin in orders:
+        if TEST_MODE:
+            order_id = fake_orderid()
+            if DEBUG:
+                print(f"Running in test updating portfolio with fake orderid:{order_id}")
+        else:
+            order_id = orders[coin][0]["orderId"]
+        value = {
             "symbol": orders[coin][0]["symbol"],
-            "orderid": orders[coin][0]["orderId"],
+            "orderid": order_id,
             "timestamp": orders[coin][0]["time"],
             "bought_at": last_price[coin]["price"],
             "volume": volume[coin],
             "stop_loss": -STOP_LOSS,
             "take_profit": TAKE_PROFIT,
         }
+        coins_bought[coin] = value
 
         # save the coins in a json file in the same directory
         with open(coins_bought_file_path, "w") as file:
             json.dump(coins_bought, file, indent=4)
 
         print(f'Order with id {orders[coin][0]["orderId"]} placed and saved to file')
+
+    # For some reason we cant add the
+    # if MONGO: stuff in the above loop.
+    # it causes the json file to be malformed...
+    # So this is the next best option...
+    for coin in orders:
+        if TEST_MODE:
+            order_id = fake_orderid()
+            if DEBUG:
+                print(f"Running in test updating portfolio with fake orderid:{order_id}")
+        else:
+            order_id = orders[coin][0]["orderId"]
+
+        value = {
+            "symbol": orders[coin][0]["symbol"],
+            "orderid": order_id,
+            "timestamp": orders[coin][0]["time"],
+            "buyPrice": float(last_price[coin]["price"]),
+            "volume": volume[coin],
+            "stopLoss": -STOP_LOSS,
+            "takeProfit": TAKE_PROFIT,
+        }
+        if MONGO:
+            insert_portfolio(value, DATABASE_NAME)
         # print balance report
         balance_report()
 
@@ -512,6 +573,10 @@ def remove_from_portfolio(coins_sold):
     """Remove coins sold due to SL or TP from portfolio"""
     for coin in coins_sold:
         coins_bought.pop(coin)
+        if MONGO:
+            # value = {'orderid': coins_sold[coin]['orderid']}
+            value = {"symbol": coins_sold[coin]["symbol"]}
+            delete_item = delete_portolio_item(value, DATABASE_NAME)
 
     with open(coins_bought_file_path, "w") as file:
         json.dump(coins_bought, file, indent=4)
@@ -538,6 +603,8 @@ if __name__ == "__main__":
     DEBUG = data["DEBUG"]
     AMERICAN_USER = data["AMERICAN_USER"]
     TESTNET = data["TESTNET"]
+    MONGO = data["MONGO"]
+    DATABASE_NAME = data["DATABASE_NAME"]
     PAIR_WITH = data["PAIR_WITH"]
     QUANTITY = data["QUANTITY"]
     MAX_ORDERS = data["MAX_ORDERS"]
@@ -634,7 +701,7 @@ if __name__ == "__main__":
         else:
             print(f"No modules to load {SIGNALLING_MODULES}")
     except Exception as e:
-        print(f"Error in main for signalling modules: {e}")
+        print(f"Error in main for {SIGNALLING_MODULES}: {e}")
 
     # seed initial prices
     get_price()

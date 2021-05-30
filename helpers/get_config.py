@@ -1,6 +1,7 @@
 # Load helper modules
 from helpers.parameters import parse_args, load_config
 from helpers.handle_creds import load_correct_creds
+from helpers.db import see_if_db_exists
 
 # used to store trades and sell assets
 import json
@@ -27,6 +28,7 @@ def config():
     data["DEBUG"] = parsed_config["script_options"].get("DEBUG")
     data["AMERICAN_USER"] = parsed_config["script_options"].get("AMERICAN_USER")
     data["TESTNET"] = parsed_config["script_options"].get("TESTNET")
+    data["MONGO"] = parsed_config["script_options"].get("MONGO")
 
     # Load trading vars
     data["PAIR_WITH"] = parsed_config["trading_options"]["PAIR_WITH"]
@@ -62,6 +64,14 @@ def config():
 
     if args.notimeout:
         data["NOTIMEOUT"] = True
+
+    if args.mongo or data["MONGO"] is True:
+        DATABASE_NAME = "bvt"
+        if data["TEST_MODE"]:
+            DATABASE_NAME = DATABASE_NAME + "-test"
+        # checks to see if dbs exist, if not, create dbs and tables
+        see_if_db_exists()
+        data["DATABASE_NAME"] = DATABASE_NAME
 
     # Load creds for correct environment
     key = dict()

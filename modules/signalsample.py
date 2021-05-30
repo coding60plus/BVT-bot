@@ -76,7 +76,8 @@ def analyze(pairs):
     return signal_coins
 
 
-if __name__ == "__main__":
+# if __name__ == "__main__":
+def process():
     signal_coins = {}
     pairs = {}
 
