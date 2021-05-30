@@ -35,7 +35,7 @@ trading_options:
   TRADE_SLOTS: 10
 
   # Maximum number of orders that can be placed
-  MAX_ORDERS: 99
+  # MAX_ORDERS: 20
 
   # List of trading pairs to exclude
   # by default we're excluding the most popular fiat pairs

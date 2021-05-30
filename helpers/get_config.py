@@ -33,7 +33,7 @@ def config():
     # Load trading vars
     data["PAIR_WITH"] = parsed_config["trading_options"]["PAIR_WITH"]
     data["QUANTITY"] = parsed_config["trading_options"]["QUANTITY"]
-    data["MAX_ORDERS"] = parsed_config["trading_options"]["MAX_ORDERS"]
+    # data["MAX_ORDERS"] = parsed_config["trading_options"]["MAX_ORDERS"]
     data["TRADE_SLOTS"] = parsed_config["trading_options"]["TRADE_SLOTS"]
     data["FIATS"] = parsed_config["trading_options"]["FIATS"]
     data["TIME_DIFFERENCE"] = parsed_config["trading_options"]["TIME_DIFFERENCE"]

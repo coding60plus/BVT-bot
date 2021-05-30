@@ -8,7 +8,7 @@ data, _ = config()
 EXCHANGE = data["EXCHANGE"]
 SCREENER = data["SCREENER"]
 FIRST_INTERVAL = Interval.INTERVAL_1_MINUTE
-TICKER_THRESHOLD = 13  # How many of the 26 indicators to add ticker to list
+TICKER_THRESHOLD = 14  # How many of the 26 indicators to add ticker to list
 
 
 def get_new_tickers(client, PAIR_WITH, FIATS):

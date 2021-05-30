@@ -1,30 +1,9 @@
-"""
-Disclaimer
-
-All investment strategies and investments involve risk of loss.
-Nothing contained in this program, scripts, code or repositoy should be
-construed as investment advice.Any reference to an investment's past or
-potential performance is not, and should not be construed as, a recommendation
-or as a guarantee of any specific outcome or profit.
-
-By using this program you accept all liabilities,
-and that no claims can be made against the developers,
-or others connected with the program.
-"""
-
-
 # use for environment variables
 import os
-from re import X
-
-# use if needed to pass args to external modules
 import sys
-
-# used to create threads & dynamic loading of modules
 import threading
 import importlib
-
-# used for directory handling
+import json
 import glob
 
 # Needed for colorful console output Install with: python3 -m pip install colorama (Mac/Linux) or pip install colorama (PC)
@@ -36,22 +15,10 @@ init()
 from datetime import date, datetime, timedelta
 import time
 
-# used to store trades and sell assets
-import json
-
-# Load api auth module
 from helpers.api_auth import auth
-
-# load get tickers module
 from helpers.get_tickers import get_new_tickers
-
-# load get config module
 from helpers.get_config import config
-
-# Load colors module
 from helpers.colors import txcolors
-
-# Load db module
 from helpers.db import *
 
 # tracks profit/loss each session
@@ -59,13 +26,13 @@ global session_profit
 session_profit = 0
 
 # over max_orders buy_coins() dont trade more
-global max_orders
+# global max_orders
 
 # print with timestamps
 old_out = sys.stdout
 
 
-class St_ampe_dOut:
+class TerminalOutput:
     """Stamped stdout."""
 
     nl = True
@@ -85,7 +52,7 @@ class St_ampe_dOut:
         pass
 
 
-sys.stdout = St_ampe_dOut()
+sys.stdout = TerminalOutput()
 
 
 def is_fiat(PAIR_WITH):
@@ -333,7 +300,7 @@ def convert_volume():
 
 def buy_coins():
     """Place Buy market orders for each volatile coin found"""
-    global max_orders
+    # global max_orders
     volume, last_price = convert_volume()
     orders = {}
 
@@ -341,13 +308,14 @@ def buy_coins():
 
         # only buy if the there are no active trades on the coin
         # print("max_orders", max_orders)
-        if max_orders <= 0:
-            print(f"max_orders reached, no more trade!!! Wait finish trade queue.")
+        # if max_orders <= 0:
+        #     print(f"max_orders reached, no more trade!!! Wait finish trade queue.")
 
-        if coin not in coins_bought and (max_orders > 0):
+        # if coin not in coins_bought and (max_orders > 0):
+        if coin not in coins_bought:
             print(f"{txcolors.BUY}Preparing to buy {volume[coin]} {coin}{txcolors.DEFAULT}")
-            max_orders -= 1
-            print("max orders =", max_orders)
+            # max_orders -= 1
+            # print("max orders =", max_orders)
 
             if TEST_MODE:
                 orders[coin] = [{"symbol": coin, "orderId": fake_orderid(), "time": datetime.now().timestamp()}]
@@ -607,7 +575,7 @@ if __name__ == "__main__":
     DATABASE_NAME = data["DATABASE_NAME"]
     PAIR_WITH = data["PAIR_WITH"]
     QUANTITY = data["QUANTITY"]
-    MAX_ORDERS = data["MAX_ORDERS"]
+    # MAX_ORDERS = data["MAX_ORDERS"]
     TRADE_SLOTS = data["TRADE_SLOTS"]
     FIATS = data["FIATS"]
     TIME_DIFFERENCE = data["TIME_DIFFERENCE"]
@@ -629,7 +597,7 @@ if __name__ == "__main__":
         print(f"Your credentials have been loaded from {data['creds_file']}")
 
     # Initialise max_orders
-    max_orders = MAX_ORDERS
+    # max_orders = MAX_ORDERS
 
     client = auth(data, key)
 
@@ -662,8 +630,6 @@ if __name__ == "__main__":
     if os.path.isfile(coins_bought_file_path) and os.stat(coins_bought_file_path).st_size != 0:
         with open(coins_bought_file_path) as file:
             coins_bought = json.load(file)
-
-    print("Press Ctrl-Q to stop the script")
 
     if not TEST_MODE:
         if not data["NOTIMEOUT"]:  # if notimeout skip this (fast for dev tests)
@@ -706,6 +672,8 @@ if __name__ == "__main__":
     # seed initial prices
     get_price()
     while True:
+        # print balance report
+        balance_report()
         orders, last_price, volume = buy_coins()
         update_portfolio(orders, last_price, volume)
         coins_sold = sell_coins()
